@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ------------------------------------------------------
+// Models
+// ------------------------------------------------------
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  passwordHash  String       // סיסמה מוצפנת
+  name          String?
+  
+  // קשרים
+  workflows     Workflow[]
+  credentials   Credential[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Workflow {
+  id          String         @id @default(uuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String         // שם התהליך
+  description String?
+  
+  definition  Json           // מבנה הגרף (Nodes & Edges) מ-React Flow
+  isActive    Boolean        @default(false) // האם מאזין לטריגרים
+  
+  executions  ExecutionLog[] // היסטוריית ריצות
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Credential {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name          String   // שם מזהה (למשל: "My OpenAI Key")
+  provider      String   // ספק השירות ("OPENAI", "GITHUB" וכו')
+  
+  encryptedData String   // המפתח המוצפן
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, name]) // מניעת כפילות של אותו שם סוד לאותו משתמש
+}
+
+model ExecutionLog {
+  id          String   @id @default(uuid())
+  workflowId  String
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  
+  status      String   // "PENDING", "RUNNING", "SUCCESS", "FAILED"
+  
+  triggerData Json?    // המידע שהתחיל את הריצה
+  stepsLogs   Json?    // תיעוד התפוקה של כל צומת
+  error       String?  // שגיאה כללית במידה והריצה נכשלה
+  
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+}
