@@ -4,6 +4,7 @@ import IORedis from 'ioredis';
 import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import { decrypt } from '../utils/encryption';
+import { parseTemplate } from '../utils/templateParser';
 
 const prisma = new PrismaClient();
 const connection = {
@@ -68,7 +69,8 @@ export const workflowWorker = new Worker('workflow-executions', async (job: Job)
                     const apiKey = decrypt(credential.encryptedData);
 
                     // 3. שולפים את הפרומפט שהמשתמש הגדיר בצומת (או משתמשים בברירת מחדל)
-                    const userPrompt = node.data?.prompt || "Please summarize the following data briefly:";
+                    const rawPrompt = node.data?.prompt || "Please summarize the following data briefly:";
+                    const userPrompt = parseTemplate(rawPrompt, nodeOutputs);
 
                     // 4. יוצרים מופע של OpenAI עם המפתח המפוענח
                     const openai = new OpenAI({ apiKey });

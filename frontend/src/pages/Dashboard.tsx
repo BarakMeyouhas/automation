@@ -1,4 +1,5 @@
 import { ArrowRight, Layers3, PlayCircle, ShieldCheck } from 'lucide-react'
+import CreateWorkflowButton from '../components/CreateWorkflowButton'
 
 const cards = [
   {
@@ -26,13 +27,15 @@ const Dashboard = () => {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Overview</p>
           <h2 className="mt-3 font-display text-4xl text-slate-950">My Workflows</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-            The frontend auth foundation is ready. This space is prepared for workflow lists, execution history, and credential management.
+            Start from a blank canvas, connect trigger and action nodes, then save and test the workflow against the backend.
           </p>
         </div>
-        <button type="button" className="primary-button gap-2 self-start sm:self-auto">
-          Create New Workflow
-          <ArrowRight className="h-4 w-4" />
-        </button>
+        <CreateWorkflowButton className="primary-button gap-2 self-start sm:self-auto">
+          <>
+            Create New Workflow
+            <ArrowRight className="h-4 w-4" />
+          </>
+        </CreateWorkflowButton>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">

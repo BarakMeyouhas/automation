@@ -1,5 +1,6 @@
 import { LogOut, Plus, Sparkles } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
+import CreateWorkflowButton from '../components/CreateWorkflowButton'
 import { useAuth } from '../context/AuthContext'
 
 const DashboardLayout = () => {
@@ -34,19 +35,21 @@ const DashboardLayout = () => {
           <aside className="panel rounded-[2rem] p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace</p>
             <div className="mt-6 rounded-[1.5rem] bg-slate-900 p-5 text-white">
-              <p className="text-sm text-slate-300">Next milestone</p>
-              <h2 className="mt-2 font-display text-2xl">Start building your first workflow</h2>
+              <p className="text-sm text-slate-300">Workflow Builder</p>
+              <h2 className="mt-2 font-display text-2xl">Start building your first automation</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                Auth is ready. The next UI layer can plug directly into the workflow and credential APIs.
+                Create a workflow, open the visual editor, and connect trigger plus action nodes into a runnable flow definition.
               </p>
-              <button type="button" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
-                <Plus className="h-4 w-4" />
-                Create New Workflow
-              </button>
+              <CreateWorkflowButton className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60">
+                <>
+                  <Plus className="h-4 w-4" />
+                  Create New Workflow
+                </>
+              </CreateWorkflowButton>
             </div>
           </aside>
 
-          <section className="panel rounded-[2rem] p-6 sm:p-8">
+          <section className="panel rounded-[2rem] p-4 sm:p-5 lg:p-6">
             <Outlet />
           </section>
         </main>

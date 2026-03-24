@@ -5,6 +5,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import WorkflowEditor from './pages/WorkflowEditor'
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/workflows/:id" element={<WorkflowEditor />} />
         </Route>
       </Route>
 

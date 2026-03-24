@@ -31,7 +31,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -59,6 +60,16 @@ input {
   }
 
   .secondary-button {
-    @apply inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60;
   }
+}
+
+.workflow-canvas .react-flow__renderer {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.74), rgba(241, 245, 249, 0.96));
+}
+
+.workflow-canvas .react-flow__controls {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 1);
 }

@@ -17,10 +17,11 @@ export const handleWebhook = async (req: Request<WebhookParams>, res: Response):
     };
 
     try {
-        // נוודא שהתהליך בכלל קיים ופעיל
+        // נוודא שהתהליך בכלל קיים ופעיל (אלא אם זה קריאת בדיקה)
         const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
+        const isTestCall = req.query.test === 'true';
 
-        if (!workflow || !workflow.isActive) {
+        if (!workflow || (!workflow.isActive && !isTestCall)) {
             res.status(404).json({ error: 'Workflow not found or is currently inactive' });
             return;
         }
