@@ -1,6 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
 
-export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction'
+export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction' | 'discordAction'
 
 export interface TriggerNodeData extends Record<string, unknown> {
   label: string
@@ -16,13 +16,21 @@ export interface HttpNodeData extends Record<string, unknown> {
   label: string
 }
 
-export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData
+export interface DiscordNodeData extends Record<string, unknown> {
+  label: string
+  webhookUrl: string
+  message: string
+  onDataChange?: (nodeId: string, field: 'webhookUrl' | 'message', value: string) => void
+}
+
+export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData | DiscordNodeData
 
 export type TriggerNode = Node<TriggerNodeData, 'webhookTrigger'>
 export type OpenAINode = Node<OpenAINodeData, 'openAiAction'>
 export type HttpNode = Node<HttpNodeData, 'httpAction'>
+export type DiscordNode = Node<DiscordNodeData, 'discordAction'>
 
-export type WorkflowNode = TriggerNode | OpenAINode | HttpNode
+export type WorkflowNode = TriggerNode | OpenAINode | HttpNode | DiscordNode
 export type WorkflowEdge = Edge
 
 export interface WorkflowDefinition {

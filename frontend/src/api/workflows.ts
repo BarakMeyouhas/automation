@@ -7,7 +7,9 @@ interface CreateWorkflowInput {
 }
 
 interface UpdateWorkflowInput {
-  definition: WorkflowDefinition
+  definition?: WorkflowDefinition
+  name?: string
+  isActive?: boolean
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -66,5 +68,5 @@ export const testWorkflow = async (workflowId: string): Promise<string> => {
 }
 
 export const isWorkflowNodeType = (value: string): value is WorkflowNodeType => {
-  return value === 'webhookTrigger' || value === 'openAiAction' || value === 'httpAction'
+  return value === 'webhookTrigger' || value === 'openAiAction' || value === 'httpAction' || value === 'discordAction'
 }

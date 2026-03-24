@@ -14,14 +14,17 @@ import {
   type NodeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Beaker, Bot, Cable, Globe, Loader2, Save, Siren, Webhook } from 'lucide-react'
+import { Beaker, Bot, Cable, Globe, Loader2, Save, Siren, Webhook, MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getWorkflow, isWorkflowNodeType, testWorkflow, updateWorkflow } from '../api/workflows'
+import DiscordNode from '../components/canvas/nodes/DiscordNode'
 import HttpNode from '../components/canvas/nodes/HttpNode'
 import OpenAINode from '../components/canvas/nodes/OpenAINode'
 import TriggerNode from '../components/canvas/nodes/TriggerNode'
 import type {
+  DiscordNode as DiscordNodeType,
+  DiscordNodeData,
   HttpNodeData,
   OpenAINode as OpenAINodeType,
   OpenAINodeData,
@@ -37,6 +40,7 @@ const nodeTypes: NodeTypes = {
   webhookTrigger: TriggerNode,
   openAiAction: OpenAINode,
   httpAction: HttpNode,
+  discordAction: DiscordNode,
 }
 
 const palette = [
@@ -61,6 +65,13 @@ const palette = [
     icon: Globe,
     accent: 'from-sky-500/20 to-sky-100',
   },
+  {
+    type: 'discordAction' as const,
+    title: 'Discord Notification',
+    description: 'Post a message to a Discord channel.',
+    icon: MessageSquare,
+    accent: 'from-indigo-500/20 to-indigo-100',
+  },
 ]
 
 const createNodeId = (() => {
@@ -80,6 +91,10 @@ const createDefaultNodeData = (type: WorkflowNodeType): WorkflowNodeData => {
     return { label: 'OpenAI Action', prompt: '' }
   }
 
+  if (type === 'discordAction') {
+    return { label: 'Discord Action', webhookUrl: '', message: '' }
+  }
+
   return { label: 'HTTP Action' }
 }
 
@@ -95,6 +110,7 @@ const WorkflowEditorInner = () => {
   const [nodes, setNodes, onNodesChangeBase] = useNodesState<WorkflowNode>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>([])
   const [workflowName, setWorkflowName] = useState('Workflow Editor')
+  const [isActive, setIsActive] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
@@ -125,34 +141,41 @@ const WorkflowEditorInner = () => {
 
   const injectRuntimeData = useCallback((incomingNodes: WorkflowNode[]): WorkflowNode[] => {
     return incomingNodes.map((node) => {
-      if (node.type !== 'openAiAction') {
-        return node
-      }
-
-      return {
-        ...node,
-        data: {
-          ...node.data,
-          onPromptChange: (nodeId: string, prompt: string) => {
-            setNodes((currentNodes) =>
-              currentNodes.map((currentNode) => {
-                if (currentNode.id !== nodeId || currentNode.type !== 'openAiAction') {
-                  return currentNode
-                }
-
-                return {
-                  ...currentNode,
-                  data: {
-                    ...currentNode.data,
-                    prompt,
-                    onPromptChange: currentNode.data.onPromptChange,
-                  },
-                }
-              }),
-            )
+      if (node.type === 'openAiAction') {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onPromptChange: (nodeId: string, prompt: string) => {
+              setNodes((currentNodes) =>
+                currentNodes.map((currentNode) => {
+                  if (currentNode.id !== nodeId || currentNode.type !== 'openAiAction') return currentNode
+                  return { ...currentNode, data: { ...currentNode.data, prompt, onPromptChange: currentNode.data.onPromptChange } }
+                })
+              )
+            },
           },
-        },
+        }
       }
+
+      if (node.type === 'discordAction') {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onDataChange: (nodeId: string, field: 'webhookUrl' | 'message', value: string) => {
+              setNodes((currentNodes) =>
+                currentNodes.map((currentNode) => {
+                  if (currentNode.id !== nodeId || currentNode.type !== 'discordAction') return currentNode
+                  return { ...currentNode, data: { ...currentNode.data, [field]: value, onDataChange: currentNode.data.onDataChange } }
+                })
+              )
+            },
+          },
+        }
+      }
+
+      return node
     })
   }, [setNodes])
 
@@ -169,6 +192,7 @@ const WorkflowEditorInner = () => {
       try {
         const workflow = await getWorkflow(id)
         setWorkflowName(workflow.name)
+        setIsActive(workflow.isActive ?? false)
         setNodes(injectRuntimeData(workflow.definition?.nodes ?? []))
         setEdges(workflow.definition?.edges ?? [])
       } catch (error) {
@@ -226,7 +250,7 @@ const WorkflowEditorInner = () => {
       id: createNodeId(),
       type,
       position,
-      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData,
+      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData,
     }
 
     setNodes((currentNodes) => injectRuntimeData([...currentNodes, newNode]))
@@ -234,15 +258,15 @@ const WorkflowEditorInner = () => {
 
   const serializeNodes = useCallback((currentNodes: WorkflowNode[]): WorkflowNode[] => {
     return currentNodes.map((node) => {
-      if (node.type !== 'openAiAction') {
-        return node
+      if (node.type === 'openAiAction') {
+        const { onPromptChange: _onPromptChange, ...data } = node.data
+        return { ...node, data } as OpenAINodeType
       }
-
-      const { onPromptChange: _onPromptChange, ...data } = node.data
-      return {
-        ...node,
-        data,
-      } as OpenAINodeType
+      if (node.type === 'discordAction') {
+        const { onDataChange: _onDataChange, ...data } = node.data
+        return { ...node, data } as DiscordNodeType
+      }
+      return node
     })
   }, [])
 
@@ -268,6 +292,20 @@ const WorkflowEditorInner = () => {
       pushNotification({ tone: 'error', message })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleToggleActive = async () => {
+    if (!id) return
+    const newActiveState = !isActive
+    setIsActive(newActiveState)
+    
+    try {
+      await updateWorkflow(id, { isActive: newActiveState })
+      pushNotification({ tone: newActiveState ? 'success' : 'info', message: newActiveState ? 'Workflow is now live!' : 'Workflow paused.' })
+    } catch (error) {
+      setIsActive(!newActiveState)
+      pushNotification({ tone: 'error', message: 'Failed to update workflow status.' })
     }
   }
 
@@ -297,6 +335,8 @@ const WorkflowEditorInner = () => {
         return '#10b981'
       case 'httpAction':
         return '#0ea5e9'
+      case 'discordAction':
+        return '#5865F2'
       default:
         return '#94a3b8'
     }
@@ -338,6 +378,18 @@ const WorkflowEditorInner = () => {
           <p className="mt-2 text-sm text-slate-600">{statusText}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <div className="mr-2 flex items-center gap-3 border-r border-slate-200 pr-5">
+            <span className={`text-sm font-semibold uppercase tracking-wider ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>{isActive ? 'Live' : 'Paused'}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isActive}
+              onClick={handleToggleActive}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${isActive ? 'bg-emerald-500' : 'bg-slate-300'}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
           <button type="button" onClick={handleTest} disabled={isTesting} className="secondary-button gap-2">
             {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Beaker className="h-4 w-4" />}
             {isTesting ? 'Running...' : 'Test / Run'}

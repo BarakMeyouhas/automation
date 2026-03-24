@@ -91,6 +91,34 @@ export const workflowWorker = new Worker('workflow-executions', async (job: Job)
                     };
                     break;
 
+                case 'discordAction':
+                    const rawUrl = node.data?.webhookUrl || '';
+                    const rawMsg = node.data?.message || '';
+
+                    const discordUrl = parseTemplate(rawUrl, nodeOutputs);
+                    const discordMsg = parseTemplate(rawMsg, nodeOutputs);
+
+                    if (!discordUrl) {
+                        throw new Error('Discord Webhook URL is missing or invalid');
+                    }
+
+                    const discordResponse = await fetch(discordUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: discordMsg })
+                    });
+
+                    if (!discordResponse.ok) {
+                        const errorText = await discordResponse.text();
+                        throw new Error(`Discord API Error: ${discordResponse.status} - ${errorText}`);
+                    }
+
+                    nodeOutput = {
+                        success: true,
+                        sentMessage: discordMsg
+                    };
+                    break;
+
                 case 'httpAction':
                     nodeOutput = { status: 200, message: "Simulated HTTP success", received: inputData };
                     break;
