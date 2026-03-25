@@ -171,11 +171,22 @@ const WorkflowEditorInner = () => {
 
   const injectRuntimeData = useCallback((incomingNodes: WorkflowNode[]): WorkflowNode[] => {
     return incomingNodes.map((node) => {
+      const baseNode = {
+        ...node,
+        data: {
+          ...node.data,
+          onDelete: (nodeId: string) => {
+            setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+            setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId))
+          },
+        },
+      } as WorkflowNode
+
       if (node.type === 'openAiAction') {
         return {
-          ...node,
+          ...baseNode,
           data: {
-            ...node.data,
+            ...baseNode.data,
             onPromptChange: (nodeId: string, prompt: string) => {
               setNodes((currentNodes) =>
                 currentNodes.map((currentNode) => {
@@ -185,14 +196,14 @@ const WorkflowEditorInner = () => {
               )
             },
           },
-        }
+        } as OpenAINodeType
       }
 
       if (node.type === 'discordAction') {
         return {
-          ...node,
+          ...baseNode,
           data: {
-            ...node.data,
+            ...baseNode.data,
             onDataChange: (nodeId: string, field: 'webhookUrl' | 'message', value: string) => {
               setNodes((currentNodes) =>
                 currentNodes.map((currentNode) => {
@@ -202,14 +213,14 @@ const WorkflowEditorInner = () => {
               )
             },
           },
-        }
+        } as DiscordNodeType
       }
 
       if (node.type === 'trelloAction') {
         return {
-          ...node,
+          ...baseNode,
           data: {
-            ...node.data,
+            ...baseNode.data,
             onDataChange: (nodeId: string, field: 'apiKey' | 'apiToken' | 'listId' | 'cardName' | 'cardDescription', value: string) => {
               setNodes((currentNodes) =>
                 currentNodes.map((currentNode) => {
@@ -219,14 +230,14 @@ const WorkflowEditorInner = () => {
               )
             },
           },
-        }
+        } as TrelloNodeType
       }
 
       if (node.type === 'githubAction') {
         return {
-          ...node,
+          ...baseNode,
           data: {
-            ...node.data,
+            ...baseNode.data,
             onDataChange: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => {
               setNodes((currentNodes) =>
                 currentNodes.map((currentNode) => {
@@ -236,12 +247,12 @@ const WorkflowEditorInner = () => {
               )
             },
           },
-        }
+        } as GitHubNodeType
       }
 
-      return node
+      return baseNode
     })
-  }, [setNodes])
+  }, [setNodes, setEdges])
 
   useEffect(() => {
     if (!id) {
@@ -323,22 +334,24 @@ const WorkflowEditorInner = () => {
   const serializeNodes = useCallback((currentNodes: WorkflowNode[]): WorkflowNode[] => {
     return currentNodes.map((node) => {
       if (node.type === 'openAiAction') {
-        const { onPromptChange: _onPromptChange, ...data } = node.data
+        const { onPromptChange: _onPromptChange, onDelete: _onDelete, ...data } = node.data
         return { ...node, data } as OpenAINodeType
       }
       if (node.type === 'discordAction') {
-        const { onDataChange: _onDataChange, ...data } = node.data
+        const { onDataChange: _onDataChange, onDelete: _onDelete, ...data } = node.data
         return { ...node, data } as DiscordNodeType
       }
       if (node.type === 'trelloAction') {
-        const { onDataChange: _onDataChange, ...data } = node.data
+        const { onDataChange: _onDataChange, onDelete: _onDelete, ...data } = node.data
         return { ...node, data } as TrelloNodeType
       }
       if (node.type === 'githubAction') {
-        const { onDataChange: _onDataChange, ...data } = node.data
+        const { onDataChange: _onDataChange, onDelete: _onDelete, ...data } = node.data
         return { ...node, data } as GitHubNodeType
       }
-      return node
+      
+      const { onDelete: _onDelete, ...data } = node.data
+      return { ...node, data } as typeof node
     })
   }, [])
 

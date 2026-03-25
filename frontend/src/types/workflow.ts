@@ -4,16 +4,19 @@ export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction' 
 
 export interface TriggerNodeData extends Record<string, unknown> {
   label: string
+  onDelete?: (nodeId: string) => void
 }
 
 export interface OpenAINodeData extends Record<string, unknown> {
   label: string
   prompt: string
   onPromptChange?: (nodeId: string, prompt: string) => void
+  onDelete?: (nodeId: string) => void
 }
 
 export interface HttpNodeData extends Record<string, unknown> {
   label: string
+  onDelete?: (nodeId: string) => void
 }
 
 export interface DiscordNodeData extends Record<string, unknown> {
@@ -21,6 +24,7 @@ export interface DiscordNodeData extends Record<string, unknown> {
   webhookUrl: string
   message: string
   onDataChange?: (nodeId: string, field: 'webhookUrl' | 'message', value: string) => void
+  onDelete?: (nodeId: string) => void
 }
 
 export interface TrelloNodeData extends Record<string, unknown> {
@@ -31,6 +35,7 @@ export interface TrelloNodeData extends Record<string, unknown> {
   cardName: string
   cardDescription: string
   onDataChange?: (nodeId: string, field: 'apiKey' | 'apiToken' | 'listId' | 'cardName' | 'cardDescription', value: string) => void
+  onDelete?: (nodeId: string) => void
 }
 
 export interface GitHubNodeData extends Record<string, unknown> {
@@ -41,6 +46,7 @@ export interface GitHubNodeData extends Record<string, unknown> {
   prNumber: string
   commentBody: string
   onDataChange?: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => void
+  onDelete?: (nodeId: string) => void
 }
 
 export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData | DiscordNodeData | TrelloNodeData | GitHubNodeData

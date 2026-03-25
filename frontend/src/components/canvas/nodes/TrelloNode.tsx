@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Trello } from 'lucide-react'
+import { Trello, Trash2 } from 'lucide-react'
 import type { TrelloNode as TrelloNodeType } from '../../../types/workflow'
 
 const TrelloNode = ({ id, data, selected }: NodeProps<TrelloNodeType>) => {
@@ -8,9 +8,18 @@ const TrelloNode = ({ id, data, selected }: NodeProps<TrelloNodeType>) => {
   }
 
   return (
-    <div className={`min-w-[280px] rounded-3xl border bg-white p-4 shadow-lg transition ${selected ? 'border-[#0052CC] shadow-blue-100' : 'border-blue-200 shadow-slate-200/70'}`}>
+    <div className={`relative min-w-[280px] rounded-3xl border bg-white p-4 shadow-lg transition ${selected ? 'border-[#0052CC] shadow-blue-100' : 'border-blue-200 shadow-slate-200/70'}`}>
+      {selected ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); data.onDelete?.(id) }}
+          className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : null}
       <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-2 !border-white !bg-[#0052CC]" />
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 pr-6">
         <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-[#0052CC]">
           <Trello className="h-5 w-5" />
         </div>
