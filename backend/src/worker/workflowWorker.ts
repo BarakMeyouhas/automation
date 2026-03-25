@@ -158,6 +158,47 @@ export const workflowWorker = new Worker('workflow-executions', async (job: Job)
                     };
                     break;
 
+                case 'githubAction':
+                    const ghToken = node.data?.personalAccessToken || '';
+                    const ghOwner = node.data?.owner || '';
+                    const ghRepo = node.data?.repo || '';
+                    const ghPrNumber = node.data?.prNumber || '';
+                    const rawGhComment = node.data?.commentBody || '';
+
+                    const parsedGhOwner = parseTemplate(ghOwner, nodeOutputs);
+                    const parsedGhRepo = parseTemplate(ghRepo, nodeOutputs);
+                    const parsedGhPrNumber = parseTemplate(ghPrNumber, nodeOutputs);
+                    const parsedGhComment = parseTemplate(rawGhComment, nodeOutputs);
+
+                    if (!ghToken || !parsedGhOwner || !parsedGhRepo || !parsedGhPrNumber) {
+                        throw new Error('GitHub configuration is incomplete');
+                    }
+
+                    const ghUrl = `https://api.github.com/repos/${parsedGhOwner}/${parsedGhRepo}/issues/${parsedGhPrNumber}/comments`;
+
+                    const ghResponse = await fetch(ghUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${ghToken}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ body: parsedGhComment }),
+                    });
+
+                    if (!ghResponse.ok) {
+                        const errorText = await ghResponse.text();
+                        throw new Error(`GitHub API Error: ${ghResponse.status} - ${errorText}`);
+                    }
+
+                    const ghData = await ghResponse.json();
+                    nodeOutput = {
+                        success: true,
+                        commentId: ghData.id,
+                        commentUrl: ghData.html_url
+                    };
+                    break;
+
                 case 'httpAction':
                     nodeOutput = { status: 200, message: "Simulated HTTP success", received: inputData };
                     break;
