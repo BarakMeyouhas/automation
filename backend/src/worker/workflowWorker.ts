@@ -199,6 +199,50 @@ export const workflowWorker = new Worker('workflow-executions', async (job: Job)
                     };
                     break;
 
+                case 'githubPostCommentAction':
+                    const postToken = node.data?.personalAccessToken || '';
+                    const postOwner = node.data?.owner || '';
+                    const postRepo = node.data?.repo || '';
+                    const postPrNumber = node.data?.prNumber || '';
+                    const postRawComment = node.data?.commentBody || '';
+
+                    const parsedPostOwner = parseTemplate(postOwner, nodeOutputs);
+                    const parsedPostRepo = parseTemplate(postRepo, nodeOutputs);
+                    const parsedPostPrNumber = parseTemplate(postPrNumber, nodeOutputs);
+                    const parsedPostComment = parseTemplate(postRawComment, nodeOutputs);
+
+                    if (!postToken || !parsedPostOwner || !parsedPostRepo || !parsedPostPrNumber) {
+                        throw new Error('[GitHub Post Action] Configuration is incomplete');
+                    }
+
+                    const postUrl = `https://api.github.com/repos/${parsedPostOwner}/${parsedPostRepo}/issues/${parsedPostPrNumber}/comments`;
+
+                    console.log('[GitHub Post Action] Request URL:', postUrl);
+
+                    const postResponse = await fetch(postUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${postToken}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ body: parsedPostComment }),
+                    });
+
+                    if (!postResponse.ok) {
+                        const errorText = await postResponse.text();
+                        console.error('[GitHub Post Action] Failed Response:', errorText);
+                        throw new Error(`GitHub API Error: ${postResponse.status} - ${errorText}`);
+                    }
+
+                    const postData = await postResponse.json();
+                    nodeOutput = {
+                        success: true,
+                        commentId: postData.id,
+                        commentUrl: postData.html_url
+                    };
+                    break;
+
                 case 'httpAction':
                     nodeOutput = { status: 200, message: "Simulated HTTP success", received: inputData };
                     break;

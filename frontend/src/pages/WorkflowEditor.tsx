@@ -24,6 +24,7 @@ import OpenAINode from '../components/canvas/nodes/OpenAINode'
 import TriggerNode from '../components/canvas/nodes/TriggerNode'
 import TrelloNode from '../components/canvas/nodes/TrelloNode'
 import GitHubNode from '../components/canvas/nodes/GitHubNode'
+import GitHubPostNode from '../components/canvas/nodes/GitHubPostNode'
 import type {
   DiscordNode as DiscordNodeType,
   DiscordNodeData,
@@ -34,6 +35,8 @@ import type {
   TrelloNodeData,
   GitHubNode as GitHubNodeType,
   GitHubNodeData,
+  GitHubPostNode as GitHubPostNodeType,
+  GitHubPostNodeData,
   TriggerNodeData,
   WorkflowEdge,
   WorkflowNode,
@@ -49,6 +52,7 @@ const nodeTypes: NodeTypes = {
   discordAction: DiscordNode,
   trelloAction: TrelloNode,
   githubAction: GitHubNode,
+  githubPostCommentAction: GitHubPostNode,
 }
 
 const palette = [
@@ -94,6 +98,13 @@ const palette = [
     icon: Github,
     accent: 'from-slate-500/20 to-slate-200',
   },
+  {
+    type: 'githubPostCommentAction' as const,
+    title: 'GitHub Action (Post Comment)',
+    description: 'Post a comment on a Pull Request.',
+    icon: Github,
+    accent: 'from-slate-500/20 to-slate-200',
+  },
 ]
 
 const createNodeId = (() => {
@@ -123,6 +134,10 @@ const createDefaultNodeData = (type: WorkflowNodeType): WorkflowNodeData => {
 
   if (type === 'githubAction') {
     return { label: 'GitHub Action (Get Diff)', personalAccessToken: '', owner: '', repo: '', prNumber: '' }
+  }
+
+  if (type === 'githubPostCommentAction') {
+    return { label: 'GitHub Action (Post Comment)', personalAccessToken: '', owner: '', repo: '', prNumber: '', commentBody: '' }
   }
 
   return { label: 'HTTP Action' }
@@ -250,6 +265,23 @@ const WorkflowEditorInner = () => {
         } as GitHubNodeType
       }
 
+      if (node.type === 'githubPostCommentAction') {
+        return {
+          ...baseNode,
+          data: {
+            ...baseNode.data,
+            onDataChange: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => {
+              setNodes((currentNodes) =>
+                currentNodes.map((currentNode) => {
+                  if (currentNode.id !== nodeId || currentNode.type !== 'githubPostCommentAction') return currentNode
+                  return { ...currentNode, data: { ...currentNode.data, [field]: value, onDataChange: currentNode.data.onDataChange } }
+                })
+              )
+            },
+          },
+        } as GitHubPostNodeType
+      }
+
       return baseNode
     })
   }, [setNodes, setEdges])
@@ -325,7 +357,7 @@ const WorkflowEditorInner = () => {
       id: createNodeId(),
       type,
       position,
-      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData & TrelloNodeData & GitHubNodeData,
+      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData & TrelloNodeData & GitHubNodeData & GitHubPostNodeData,
     }
 
     setNodes((currentNodes) => injectRuntimeData([...currentNodes, newNode]))
@@ -348,6 +380,10 @@ const WorkflowEditorInner = () => {
       if (node.type === 'githubAction') {
         const { onDataChange: _onDataChange, onDelete: _onDelete, ...data } = node.data
         return { ...node, data } as GitHubNodeType
+      }
+      if (node.type === 'githubPostCommentAction') {
+        const { onDataChange: _onDataChange, onDelete: _onDelete, ...data } = node.data
+        return { ...node, data } as GitHubPostNodeType
       }
       
       const { onDelete: _onDelete, ...data } = node.data
@@ -425,6 +461,8 @@ const WorkflowEditorInner = () => {
       case 'trelloAction':
         return '#0052CC'
       case 'githubAction':
+        return '#24292E'
+      case 'githubPostCommentAction':
         return '#24292E'
       default:
         return '#94a3b8'
