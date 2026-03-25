@@ -1,11 +1,20 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Play } from 'lucide-react'
+import { Play, Trash2 } from 'lucide-react'
 import type { TriggerNode as TriggerNodeType } from '../../../types/workflow'
 
-const TriggerNode = ({ data, selected }: NodeProps<TriggerNodeType>) => {
+const TriggerNode = ({ id, data, selected }: NodeProps<TriggerNodeType>) => {
   return (
-    <div className={`min-w-[220px] rounded-3xl border bg-white p-4 shadow-lg transition ${selected ? 'border-indigo-500 shadow-indigo-100' : 'border-indigo-200 shadow-slate-200/70'}`}>
-      <div className="flex items-start gap-3">
+    <div className={`relative min-w-[220px] rounded-3xl border bg-white p-4 shadow-lg transition ${selected ? 'border-indigo-500 shadow-indigo-100' : 'border-indigo-200 shadow-slate-200/70'}`}>
+      {selected ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); data.onDelete?.(id) }}
+          className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : null}
+      <div className="flex items-start gap-3 pr-6">
         <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
           <Play className="h-5 w-5" />
         </div>
