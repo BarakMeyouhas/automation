@@ -10,11 +10,22 @@ type WebhookParams = {
 
 export const handleWebhook = async (req: Request<WebhookParams>, res: Response): Promise<void> => {
     const { workflowId } = req.params;
-    const triggerData = {
+    const triggerData: any = {
         headers: req.headers,
         body: req.body,
         query: req.query,
     };
+
+    if (req.headers['x-github-event'] === 'pull_request' && req.body?.pull_request?.diff_url) {
+        try {
+            const diffResponse = await fetch(req.body.pull_request.diff_url);
+            if (diffResponse.ok) {
+                triggerData.body.pull_request.diff_content = await diffResponse.text();
+            }
+        } catch (e) {
+            console.error('Failed to fetch PR diff automatically', e);
+        }
+    }
 
     try {
         // נוודא שהתהליך בכלל קיים ופעיל (אלא אם זה קריאת בדיקה)

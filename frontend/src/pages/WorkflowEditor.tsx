@@ -14,7 +14,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Beaker, Bot, Cable, Globe, Loader2, Save, Siren, Webhook, MessageSquare, Trello } from 'lucide-react'
+import { Beaker, Bot, Cable, Globe, Loader2, Save, Siren, Webhook, MessageSquare, Trello, Github } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getWorkflow, isWorkflowNodeType, testWorkflow, updateWorkflow } from '../api/workflows'
@@ -23,6 +23,7 @@ import HttpNode from '../components/canvas/nodes/HttpNode'
 import OpenAINode from '../components/canvas/nodes/OpenAINode'
 import TriggerNode from '../components/canvas/nodes/TriggerNode'
 import TrelloNode from '../components/canvas/nodes/TrelloNode'
+import GitHubNode from '../components/canvas/nodes/GitHubNode'
 import type {
   DiscordNode as DiscordNodeType,
   DiscordNodeData,
@@ -31,6 +32,8 @@ import type {
   OpenAINodeData,
   TrelloNode as TrelloNodeType,
   TrelloNodeData,
+  GitHubNode as GitHubNodeType,
+  GitHubNodeData,
   TriggerNodeData,
   WorkflowEdge,
   WorkflowNode,
@@ -45,6 +48,7 @@ const nodeTypes: NodeTypes = {
   httpAction: HttpNode,
   discordAction: DiscordNode,
   trelloAction: TrelloNode,
+  githubAction: GitHubNode,
 }
 
 const palette = [
@@ -83,6 +87,13 @@ const palette = [
     icon: Trello,
     accent: 'from-blue-500/20 to-blue-100',
   },
+  {
+    type: 'githubAction' as const,
+    title: 'GitHub (Post PR Comment)',
+    description: 'Post a comment on a Pull Request.',
+    icon: Github,
+    accent: 'from-slate-500/20 to-slate-200',
+  },
 ]
 
 const createNodeId = (() => {
@@ -108,6 +119,10 @@ const createDefaultNodeData = (type: WorkflowNodeType): WorkflowNodeData => {
 
   if (type === 'trelloAction') {
     return { label: 'Trello Action', apiKey: '', apiToken: '', listId: '', cardName: '', cardDescription: '' }
+  }
+
+  if (type === 'githubAction') {
+    return { label: 'GitHub Action', personalAccessToken: '', owner: '', repo: '', prNumber: '', commentBody: '' }
   }
 
   return { label: 'HTTP Action' }
@@ -207,6 +222,23 @@ const WorkflowEditorInner = () => {
         }
       }
 
+      if (node.type === 'githubAction') {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onDataChange: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => {
+              setNodes((currentNodes) =>
+                currentNodes.map((currentNode) => {
+                  if (currentNode.id !== nodeId || currentNode.type !== 'githubAction') return currentNode
+                  return { ...currentNode, data: { ...currentNode.data, [field]: value, onDataChange: currentNode.data.onDataChange } }
+                })
+              )
+            },
+          },
+        }
+      }
+
       return node
     })
   }, [setNodes])
@@ -282,7 +314,7 @@ const WorkflowEditorInner = () => {
       id: createNodeId(),
       type,
       position,
-      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData & TrelloNodeData,
+      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData & TrelloNodeData & GitHubNodeData,
     }
 
     setNodes((currentNodes) => injectRuntimeData([...currentNodes, newNode]))
@@ -301,6 +333,10 @@ const WorkflowEditorInner = () => {
       if (node.type === 'trelloAction') {
         const { onDataChange: _onDataChange, ...data } = node.data
         return { ...node, data } as TrelloNodeType
+      }
+      if (node.type === 'githubAction') {
+        const { onDataChange: _onDataChange, ...data } = node.data
+        return { ...node, data } as GitHubNodeType
       }
       return node
     })
@@ -375,6 +411,8 @@ const WorkflowEditorInner = () => {
         return '#5865F2'
       case 'trelloAction':
         return '#0052CC'
+      case 'githubAction':
+        return '#24292E'
       default:
         return '#94a3b8'
     }

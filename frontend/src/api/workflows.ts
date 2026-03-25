@@ -68,5 +68,5 @@ export const testWorkflow = async (workflowId: string): Promise<string> => {
 }
 
 export const isWorkflowNodeType = (value: string): value is WorkflowNodeType => {
-  return value === 'webhookTrigger' || value === 'openAiAction' || value === 'httpAction' || value === 'discordAction' || value === 'trelloAction'
+  return value === 'webhookTrigger' || value === 'openAiAction' || value === 'httpAction' || value === 'discordAction' || value === 'trelloAction' || value === 'githubAction'
 }
