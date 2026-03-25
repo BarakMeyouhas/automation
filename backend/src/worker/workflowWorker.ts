@@ -163,39 +163,83 @@ export const workflowWorker = new Worker('workflow-executions', async (job: Job)
                     const ghOwner = node.data?.owner || '';
                     const ghRepo = node.data?.repo || '';
                     const ghPrNumber = node.data?.prNumber || '';
-                    const rawGhComment = node.data?.commentBody || '';
 
                     const parsedGhOwner = parseTemplate(ghOwner, nodeOutputs);
                     const parsedGhRepo = parseTemplate(ghRepo, nodeOutputs);
                     const parsedGhPrNumber = parseTemplate(ghPrNumber, nodeOutputs);
-                    const parsedGhComment = parseTemplate(rawGhComment, nodeOutputs);
+
+                    console.log('[GitHub Action] Resolved Variables:', { owner: parsedGhOwner, repo: parsedGhRepo, prNumber: parsedGhPrNumber });
 
                     if (!ghToken || !parsedGhOwner || !parsedGhRepo || !parsedGhPrNumber) {
-                        throw new Error('GitHub configuration is incomplete');
+                        throw new Error('[GitHub Action] Configuration is incomplete (Missing token, owner, repo, or prNumber)');
                     }
 
-                    const ghUrl = `https://api.github.com/repos/${parsedGhOwner}/${parsedGhRepo}/issues/${parsedGhPrNumber}/comments`;
+                    const ghUrl = `https://api.github.com/repos/${parsedGhOwner}/${parsedGhRepo}/pulls/${parsedGhPrNumber}`;
+                    
+                    console.log('[GitHub Action] Request URL:', ghUrl);
 
                     const ghResponse = await fetch(ghUrl, {
-                        method: 'POST',
+                        method: 'GET',
                         headers: {
-                            'Accept': 'application/vnd.github.v3+json',
+                            'Accept': 'application/vnd.github.v3.diff',
                             'Authorization': `token ${ghToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ body: parsedGhComment }),
+                        }
                     });
 
                     if (!ghResponse.ok) {
                         const errorText = await ghResponse.text();
-                        throw new Error(`GitHub API Error: ${ghResponse.status} - ${errorText}`);
+                        console.error('[GitHub Action] Failed API Response Text:', errorText);
+                        throw new Error(`GitHub API Error: ${ghResponse.status} ${ghResponse.statusText} - ${errorText}`);
                     }
 
-                    const ghData = await ghResponse.json();
+                    const ghDataText = await ghResponse.text();
                     nodeOutput = {
                         success: true,
-                        commentId: ghData.id,
-                        commentUrl: ghData.html_url
+                        diff: ghDataText
+                    };
+                    break;
+
+                case 'githubPostCommentAction':
+                    const postToken = node.data?.personalAccessToken || '';
+                    const postOwner = node.data?.owner || '';
+                    const postRepo = node.data?.repo || '';
+                    const postPrNumber = node.data?.prNumber || '';
+                    const postRawComment = node.data?.commentBody || '';
+
+                    const parsedPostOwner = parseTemplate(postOwner, nodeOutputs);
+                    const parsedPostRepo = parseTemplate(postRepo, nodeOutputs);
+                    const parsedPostPrNumber = parseTemplate(postPrNumber, nodeOutputs);
+                    const parsedPostComment = parseTemplate(postRawComment, nodeOutputs);
+
+                    if (!postToken || !parsedPostOwner || !parsedPostRepo || !parsedPostPrNumber) {
+                        throw new Error('[GitHub Post Action] Configuration is incomplete');
+                    }
+
+                    const postUrl = `https://api.github.com/repos/${parsedPostOwner}/${parsedPostRepo}/issues/${parsedPostPrNumber}/comments`;
+
+                    console.log('[GitHub Post Action] Request URL:', postUrl);
+
+                    const postResponse = await fetch(postUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${postToken}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ body: parsedPostComment }),
+                    });
+
+                    if (!postResponse.ok) {
+                        const errorText = await postResponse.text();
+                        console.error('[GitHub Post Action] Failed Response:', errorText);
+                        throw new Error(`GitHub API Error: ${postResponse.status} - ${errorText}`);
+                    }
+
+                    const postData = await postResponse.json();
+                    nodeOutput = {
+                        success: true,
+                        commentId: postData.id,
+                        commentUrl: postData.html_url
                     };
                     break;
 

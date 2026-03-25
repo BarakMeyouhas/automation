@@ -1,9 +1,9 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Github, Trash2 } from 'lucide-react'
-import type { GitHubNode as GitHubNodeType } from '../../../types/workflow'
+import { Github, MessageSquarePlus, Trash2 } from 'lucide-react'
+import type { GitHubPostNode as GitHubPostNodeType } from '../../../types/workflow'
 
-const GitHubNode = ({ id, data, selected }: NodeProps<GitHubNodeType>) => {
-  const handleChange = (field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber', value: string) => {
+const GitHubPostNode = ({ id, data, selected }: NodeProps<GitHubPostNodeType>) => {
+  const handleChange = (field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => {
     data.onDataChange?.(id, field, value)
   }
 
@@ -20,13 +20,16 @@ const GitHubNode = ({ id, data, selected }: NodeProps<GitHubNodeType>) => {
       ) : null}
       <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-2 !border-white !bg-[#24292E]" />
       <div className="flex items-start gap-3 pr-6">
-        <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-[#24292E]">
+        <div className="relative mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-[#24292E]">
           <Github className="h-5 w-5" />
+          <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[#24292E]">
+            <MessageSquarePlus className="h-2.5 w-2.5" />
+          </div>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#24292E]">GitHub Action</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#24292E]">GitHub Post</p>
           <h3 className="mt-1 text-base font-semibold text-slate-950">{data.label}</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Fetch the raw Git diff of a Pull Request.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Post a comment on a Pull Request.</p>
         </div>
       </div>
       
@@ -88,9 +91,22 @@ const GitHubNode = ({ id, data, selected }: NodeProps<GitHubNodeType>) => {
         className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
         placeholder="{{node_1.body.pull_request.number}}"
       />
+
+      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        Comment Body
+      </label>
+      <textarea
+        value={data.commentBody}
+        onChange={(event) => handleChange('commentBody', event.target.value)}
+        onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+        rows={4}
+        className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+        placeholder="AI Code Review:\n\n{{node_2.result}}"
+      />
       <Handle type="source" position={Position.Right} className="!h-3 !w-3 !border-2 !border-white !bg-[#24292E]" />
     </div>
   )
 }
 
-export default GitHubNode
+export default GitHubPostNode

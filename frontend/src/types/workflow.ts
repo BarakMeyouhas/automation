@@ -1,6 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
 
-export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction' | 'discordAction' | 'trelloAction' | 'githubAction'
+export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction' | 'discordAction' | 'trelloAction' | 'githubAction' | 'githubPostCommentAction'
 
 export interface TriggerNodeData extends Record<string, unknown> {
   label: string
@@ -44,12 +44,22 @@ export interface GitHubNodeData extends Record<string, unknown> {
   owner: string
   repo: string
   prNumber: string
+  onDataChange?: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber', value: string) => void
+  onDelete?: (nodeId: string) => void
+}
+
+export interface GitHubPostNodeData extends Record<string, unknown> {
+  label: string
+  personalAccessToken: string
+  owner: string
+  repo: string
+  prNumber: string
   commentBody: string
   onDataChange?: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => void
   onDelete?: (nodeId: string) => void
 }
 
-export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData | DiscordNodeData | TrelloNodeData | GitHubNodeData
+export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData | DiscordNodeData | TrelloNodeData | GitHubNodeData | GitHubPostNodeData
 
 export type TriggerNode = Node<TriggerNodeData, 'webhookTrigger'>
 export type OpenAINode = Node<OpenAINodeData, 'openAiAction'>
@@ -57,8 +67,9 @@ export type HttpNode = Node<HttpNodeData, 'httpAction'>
 export type DiscordNode = Node<DiscordNodeData, 'discordAction'>
 export type TrelloNode = Node<TrelloNodeData, 'trelloAction'>
 export type GitHubNode = Node<GitHubNodeData, 'githubAction'>
+export type GitHubPostNode = Node<GitHubPostNodeData, 'githubPostCommentAction'>
 
-export type WorkflowNode = TriggerNode | OpenAINode | HttpNode | DiscordNode | TrelloNode | GitHubNode
+export type WorkflowNode = TriggerNode | OpenAINode | HttpNode | DiscordNode | TrelloNode | GitHubNode | GitHubPostNode
 export type WorkflowEdge = Edge
 
 export interface WorkflowDefinition {
