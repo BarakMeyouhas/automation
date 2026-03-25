@@ -89,8 +89,8 @@ const palette = [
   },
   {
     type: 'githubAction' as const,
-    title: 'GitHub (Post PR Comment)',
-    description: 'Post a comment on a Pull Request.',
+    title: 'GitHub Action (Get Diff)',
+    description: 'Fetch the raw Git diff of a Pull Request.',
     icon: Github,
     accent: 'from-slate-500/20 to-slate-200',
   },
@@ -122,7 +122,7 @@ const createDefaultNodeData = (type: WorkflowNodeType): WorkflowNodeData => {
   }
 
   if (type === 'githubAction') {
-    return { label: 'GitHub Action', personalAccessToken: '', owner: '', repo: '', prNumber: '', commentBody: '' }
+    return { label: 'GitHub Action (Get Diff)', personalAccessToken: '', owner: '', repo: '', prNumber: '' }
   }
 
   return { label: 'HTTP Action' }
@@ -238,7 +238,7 @@ const WorkflowEditorInner = () => {
           ...baseNode,
           data: {
             ...baseNode.data,
-            onDataChange: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => {
+            onDataChange: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber', value: string) => {
               setNodes((currentNodes) =>
                 currentNodes.map((currentNode) => {
                   if (currentNode.id !== nodeId || currentNode.type !== 'githubAction') return currentNode

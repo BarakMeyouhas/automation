@@ -3,7 +3,7 @@ import { Github, Trash2 } from 'lucide-react'
 import type { GitHubNode as GitHubNodeType } from '../../../types/workflow'
 
 const GitHubNode = ({ id, data, selected }: NodeProps<GitHubNodeType>) => {
-  const handleChange = (field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => {
+  const handleChange = (field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber', value: string) => {
     data.onDataChange?.(id, field, value)
   }
 
@@ -26,7 +26,7 @@ const GitHubNode = ({ id, data, selected }: NodeProps<GitHubNodeType>) => {
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#24292E]">GitHub Action</p>
           <h3 className="mt-1 text-base font-semibold text-slate-950">{data.label}</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Post a comment on a Pull Request.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Fetch the raw Git diff of a Pull Request.</p>
         </div>
       </div>
       
@@ -87,19 +87,6 @@ const GitHubNode = ({ id, data, selected }: NodeProps<GitHubNodeType>) => {
         onPointerDown={(event) => event.stopPropagation()}
         className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
         placeholder="{{node_1.body.pull_request.number}}"
-      />
-
-      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-        Comment Body
-      </label>
-      <textarea
-        value={data.commentBody}
-        onChange={(event) => handleChange('commentBody', event.target.value)}
-        onClick={(event) => event.stopPropagation()}
-        onPointerDown={(event) => event.stopPropagation()}
-        rows={4}
-        className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-        placeholder="AI Code Review:\\n\\n{{node_2.result}}"
       />
       <Handle type="source" position={Position.Right} className="!h-3 !w-3 !border-2 !border-white !bg-[#24292E]" />
     </div>

@@ -44,8 +44,7 @@ export interface GitHubNodeData extends Record<string, unknown> {
   owner: string
   repo: string
   prNumber: string
-  commentBody: string
-  onDataChange?: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber' | 'commentBody', value: string) => void
+  onDataChange?: (nodeId: string, field: 'personalAccessToken' | 'owner' | 'repo' | 'prNumber', value: string) => void
   onDelete?: (nodeId: string) => void
 }
 
