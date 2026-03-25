@@ -119,6 +119,45 @@ export const workflowWorker = new Worker('workflow-executions', async (job: Job)
                     };
                     break;
 
+                case 'trelloAction':
+                    const trelloApiKey = node.data?.apiKey || '';
+                    const trelloApiToken = node.data?.apiToken || '';
+                    const trelloListId = node.data?.listId || '';
+                    const rawCardName = node.data?.cardName || '';
+                    const rawCardDesc = node.data?.cardDescription || '';
+
+                    const parsedCardName = parseTemplate(rawCardName, nodeOutputs);
+                    const parsedCardDesc = parseTemplate(rawCardDesc, nodeOutputs);
+
+                    if (!trelloApiKey || !trelloApiToken || !trelloListId) {
+                        throw new Error('Trello credentials or List ID are missing');
+                    }
+
+                    const trelloUrl = new URL(`https://api.trello.com/1/cards`);
+                    trelloUrl.searchParams.append('idList', trelloListId);
+                    trelloUrl.searchParams.append('key', trelloApiKey);
+                    trelloUrl.searchParams.append('token', trelloApiToken);
+                    trelloUrl.searchParams.append('name', parsedCardName);
+                    trelloUrl.searchParams.append('desc', parsedCardDesc);
+
+                    const trelloResponse = await fetch(trelloUrl.toString(), {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (!trelloResponse.ok) {
+                        const errorText = await trelloResponse.text();
+                        throw new Error(`Trello API Error: ${trelloResponse.status} - ${errorText}`);
+                    }
+
+                    const trelloData = await trelloResponse.json();
+                    nodeOutput = {
+                        success: true,
+                        cardId: trelloData.id,
+                        cardUrl: trelloData.url
+                    };
+                    break;
+
                 case 'httpAction':
                     nodeOutput = { status: 200, message: "Simulated HTTP success", received: inputData };
                     break;

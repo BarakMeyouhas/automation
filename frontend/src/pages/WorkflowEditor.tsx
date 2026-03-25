@@ -14,7 +14,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Beaker, Bot, Cable, Globe, Loader2, Save, Siren, Webhook, MessageSquare } from 'lucide-react'
+import { Beaker, Bot, Cable, Globe, Loader2, Save, Siren, Webhook, MessageSquare, Trello } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getWorkflow, isWorkflowNodeType, testWorkflow, updateWorkflow } from '../api/workflows'
@@ -22,12 +22,15 @@ import DiscordNode from '../components/canvas/nodes/DiscordNode'
 import HttpNode from '../components/canvas/nodes/HttpNode'
 import OpenAINode from '../components/canvas/nodes/OpenAINode'
 import TriggerNode from '../components/canvas/nodes/TriggerNode'
+import TrelloNode from '../components/canvas/nodes/TrelloNode'
 import type {
   DiscordNode as DiscordNodeType,
   DiscordNodeData,
   HttpNodeData,
   OpenAINode as OpenAINodeType,
   OpenAINodeData,
+  TrelloNode as TrelloNodeType,
+  TrelloNodeData,
   TriggerNodeData,
   WorkflowEdge,
   WorkflowNode,
@@ -41,6 +44,7 @@ const nodeTypes: NodeTypes = {
   openAiAction: OpenAINode,
   httpAction: HttpNode,
   discordAction: DiscordNode,
+  trelloAction: TrelloNode,
 }
 
 const palette = [
@@ -72,6 +76,13 @@ const palette = [
     icon: MessageSquare,
     accent: 'from-indigo-500/20 to-indigo-100',
   },
+  {
+    type: 'trelloAction' as const,
+    title: 'Trello (Create Card)',
+    description: 'Create a new card in a Trello board.',
+    icon: Trello,
+    accent: 'from-blue-500/20 to-blue-100',
+  },
 ]
 
 const createNodeId = (() => {
@@ -93,6 +104,10 @@ const createDefaultNodeData = (type: WorkflowNodeType): WorkflowNodeData => {
 
   if (type === 'discordAction') {
     return { label: 'Discord Action', webhookUrl: '', message: '' }
+  }
+
+  if (type === 'trelloAction') {
+    return { label: 'Trello Action', apiKey: '', apiToken: '', listId: '', cardName: '', cardDescription: '' }
   }
 
   return { label: 'HTTP Action' }
@@ -167,6 +182,23 @@ const WorkflowEditorInner = () => {
               setNodes((currentNodes) =>
                 currentNodes.map((currentNode) => {
                   if (currentNode.id !== nodeId || currentNode.type !== 'discordAction') return currentNode
+                  return { ...currentNode, data: { ...currentNode.data, [field]: value, onDataChange: currentNode.data.onDataChange } }
+                })
+              )
+            },
+          },
+        }
+      }
+
+      if (node.type === 'trelloAction') {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onDataChange: (nodeId: string, field: 'apiKey' | 'apiToken' | 'listId' | 'cardName' | 'cardDescription', value: string) => {
+              setNodes((currentNodes) =>
+                currentNodes.map((currentNode) => {
+                  if (currentNode.id !== nodeId || currentNode.type !== 'trelloAction') return currentNode
                   return { ...currentNode, data: { ...currentNode.data, [field]: value, onDataChange: currentNode.data.onDataChange } }
                 })
               )
@@ -250,7 +282,7 @@ const WorkflowEditorInner = () => {
       id: createNodeId(),
       type,
       position,
-      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData,
+      data: createDefaultNodeData(type) as TriggerNodeData & OpenAINodeData & HttpNodeData & DiscordNodeData & TrelloNodeData,
     }
 
     setNodes((currentNodes) => injectRuntimeData([...currentNodes, newNode]))
@@ -265,6 +297,10 @@ const WorkflowEditorInner = () => {
       if (node.type === 'discordAction') {
         const { onDataChange: _onDataChange, ...data } = node.data
         return { ...node, data } as DiscordNodeType
+      }
+      if (node.type === 'trelloAction') {
+        const { onDataChange: _onDataChange, ...data } = node.data
+        return { ...node, data } as TrelloNodeType
       }
       return node
     })
@@ -337,6 +373,8 @@ const WorkflowEditorInner = () => {
         return '#0ea5e9'
       case 'discordAction':
         return '#5865F2'
+      case 'trelloAction':
+        return '#0052CC'
       default:
         return '#94a3b8'
     }
@@ -410,27 +448,31 @@ const WorkflowEditorInner = () => {
         </div>
       ) : null}
 
-      <div className="absolute bottom-4 left-4 top-[118px] z-10 w-[270px] rounded-[1.5rem] border border-white/70 bg-white/80 p-4 shadow-xl backdrop-blur md:left-6 md:top-[124px]">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Node Palette</p>
-        <div className="mt-4 space-y-3">
-          {palette.map(({ type, title, description, icon: Icon, accent }) => (
-            <button
-              key={type}
-              type="button"
-              draggable
-              onDragStart={(event) => handleDragStart(event, type)}
-              className="w-full rounded-[1.4rem] border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-            >
-              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${accent} text-slate-900`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-slate-950">{title}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
-            </button>
-          ))}
+      <div className="absolute bottom-4 left-4 top-[118px] z-10 flex w-[270px] flex-col overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/80 shadow-xl backdrop-blur md:left-6 md:top-[124px]">
+        <div className="p-4 pb-2 flex-shrink-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Node Palette</p>
         </div>
-        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          Drag a node onto the canvas, then connect nodes to shape the workflow definition.
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="space-y-3 mt-2">
+            {palette.map(({ type, title, description, icon: Icon, accent }) => (
+              <button
+                key={type}
+                type="button"
+                draggable
+                onDragStart={(event) => handleDragStart(event, type)}
+                className="w-full rounded-[1.4rem] border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+              >
+                <div className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${accent} text-slate-900`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-3 text-sm font-semibold text-slate-950">{title}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-6 mb-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Drag a node onto the canvas, then connect nodes to shape the workflow definition.
+          </div>
         </div>
       </div>
 

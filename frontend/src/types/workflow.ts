@@ -1,6 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
 
-export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction' | 'discordAction'
+export type WorkflowNodeType = 'webhookTrigger' | 'openAiAction' | 'httpAction' | 'discordAction' | 'trelloAction'
 
 export interface TriggerNodeData extends Record<string, unknown> {
   label: string
@@ -23,14 +23,25 @@ export interface DiscordNodeData extends Record<string, unknown> {
   onDataChange?: (nodeId: string, field: 'webhookUrl' | 'message', value: string) => void
 }
 
-export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData | DiscordNodeData
+export interface TrelloNodeData extends Record<string, unknown> {
+  label: string
+  apiKey: string
+  apiToken: string
+  listId: string
+  cardName: string
+  cardDescription: string
+  onDataChange?: (nodeId: string, field: 'apiKey' | 'apiToken' | 'listId' | 'cardName' | 'cardDescription', value: string) => void
+}
+
+export type WorkflowNodeData = TriggerNodeData | OpenAINodeData | HttpNodeData | DiscordNodeData | TrelloNodeData
 
 export type TriggerNode = Node<TriggerNodeData, 'webhookTrigger'>
 export type OpenAINode = Node<OpenAINodeData, 'openAiAction'>
 export type HttpNode = Node<HttpNodeData, 'httpAction'>
 export type DiscordNode = Node<DiscordNodeData, 'discordAction'>
+export type TrelloNode = Node<TrelloNodeData, 'trelloAction'>
 
-export type WorkflowNode = TriggerNode | OpenAINode | HttpNode | DiscordNode
+export type WorkflowNode = TriggerNode | OpenAINode | HttpNode | DiscordNode | TrelloNode
 export type WorkflowEdge = Edge
 
 export interface WorkflowDefinition {
